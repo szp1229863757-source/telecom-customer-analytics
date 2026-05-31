@@ -122,22 +122,24 @@
 ## 快速运行
 
 ```bash
-# 1. 下载数据（需要 Kaggle API token）
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 下载数据（需要 Kaggle API token）
 python download_data.py
 
-# 2. 运行批量 ETL 管道（核心流程，无需 Hadoop 集群，本地即可运行）
-pip install pyspark pandas
+# 3. 运行批量 ETL 管道（核心流程，无需 Hadoop 集群，本地即可运行）
 python spark_batch_etl.py
 
-# 3. 运行实时处理演示（本地模拟，无需 Kafka/Flink 环境）
-pip install kafka-python
-python kafka_producer.py    # 终端 1：模拟数据上报
-python flink_processor.py   # 终端 2：实时流失检测
+# 4. 运行实时处理演示（两个终端，纯 Python，无需 Kafka/Flink）
+python stream_producer.py      # 终端 1：模拟 BSS 实时推送，生成 events.jsonl
+python stream_processor.py     # 终端 2：实时窗口聚合 + 流失检测，输出 alerts.jsonl
 
-# 4. 生成可视化看板
-pip install plotly
-python visualization.py     # 打开 output/telecom_dashboard.html
+# 5. 生成可视化看板
+python visualization.py        # 打开 output/telecom_dashboard.html
 ```
+
+> **生产级参考实现**: `kafka_producer.py` 和 `flink_processor.py` 提供了真实 Kafka + Flink 版本的代码框架，供面试时展示对生产环境技术栈的理解。
 
 ---
 
@@ -145,13 +147,16 @@ python visualization.py     # 打开 output/telecom_dashboard.html
 
 ```
 telecom-customer-analytics/
-├── spark_batch_etl.py        # 核心：PySpark 四层数仓 ETL（宽表→长表 + KPI 计算 + 告警生成）
-├── hive_ddl/create_tables.sql # Hive 建表脚本（7 张表完整 DDL + 示例查询）
-├── kafka_producer.py          # Kafka 生产者（模拟运营商 BSS 系统实时推送客户事件）
-├── flink_processor.py         # Flink 流处理器（5 分钟窗口聚合 + 多级告警规则）
-├── visualization.py           # Plotly 四合一交互式数据看板
-├── config.py                  # 全局配置中心（KPI 阈值 / 数仓分层 / Kafka / Spark 参数）
-├── download_data.py           # Kaggle 数据下载工具
+├── spark_batch_etl.py          # 核心：PySpark 四层数仓 ETL（宽表→长表 + KPI 计算 + 告警生成）
+├── stream_producer.py          # ★流式事件生成器（纯 Python，模拟 Kafka Producer）
+├── stream_processor.py         # ★实时流失检测引擎（纯 Python，5分钟窗口聚合 + 多级告警）
+├── visualization.py            # Plotly 四合一交互式数据看板
+├── config.py                   # 全局配置中心（KPI 阈值 / 数仓分层 / Kafka / Spark 参数）
+├── hive_ddl/create_tables.sql  # Hive 建表脚本（7 张表完整 DDL + 示例查询）
+├── kafka_producer.py           # [参考] 真实 Kafka 生产者代码框架
+├── flink_processor.py          # [参考] 真实 Flink DataStream 代码框架
+├── download_data.py            # Kaggle 数据下载工具
+├── requirements.txt            # Python 依赖列表
 └── README.md
 ```
 
