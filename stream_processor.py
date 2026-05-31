@@ -305,6 +305,26 @@ def monitor_stream(events_path, window_seconds=DEFAULT_WINDOW_SECONDS,
     except KeyboardInterrupt:
         print("\n[Processor] Interrupted by user.")
 
+    # ── 流结束后，强制处理所有剩余窗口 ──
+    remaining = sorted(aggregator.buffer.keys())
+    if remaining:
+        print(f"\n[Processor] Stream ended. Processing {len(remaining)} "
+              f"remaining window(s) ...")
+        for wk in remaining:
+            evts = aggregator.buffer[wk]
+            window_alerts = detector.analyze_window(wk, evts)
+            if window_alerts:
+                with open(alerts_path, "a", encoding="utf-8") as af:
+                    for alert in window_alerts:
+                        af.write(json.dumps(alert, ensure_ascii=False) + "\n")
+                        total_alerts += 1
+                for a in window_alerts[:5]:
+                    icon = "CRIT" if a["alert_level"] == "CRITICAL" else "WARN"
+                    print(f"  [{icon}] Circle={a['circle_id']} | "
+                          f"silent={a['silent_rate']:.1%} | "
+                          f"zero_call={a['zero_call_rate']:.1%} | "
+                          f"{a['alert_reason']}")
+
     # ── 最终报告 ──
     print(f"\n{'='*55}")
     print(f"[Processor] Stream processing complete!")
